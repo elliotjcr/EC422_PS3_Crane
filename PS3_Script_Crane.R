@@ -93,3 +93,87 @@ can_gas |>
   theme_minimal()
 
 ## I added Geom_Sooth because I wanted to see the overall trendline through the messy peaks and valleys obstructing the data specifically in the 1980s.
+  
+## At first, the seasonal swings really grow with the rise in gas sales (1980s), but then the swings seem to level off in the 1990s and 2000s, even as the amount of gas sold continues to increase.
+  
+can_gas <- can_gas |>
+  mutate(log_volume = log(Volume))
+
+can_gas |> 
+  autoplot(log_volume) +
+  labs(
+    title = "Canadian Gas Production",
+    subtitle = "Monthly Growth Rate of Gas Sold",
+    x = "Date", y = "Log Volume", color = NULL
+  ) +
+theme_minimal()
+
+## The log plot shows a sharper relative increase in the first 20 years of data compared to the last 20 years, even though the actual amount changed was similar over both periods.
+## This is better because the seasonal swings are now a more uniform size.
+  
+rsa <- retail_ts %>%
+  filter(series_id == "RSAFSNA") %>%
+  mutate(log_sales = log(sales))
+
+rsa |>
+  autoplot(sales) +
+  labs(
+    title = "RSAFSNA: level", y = "Millions of dollars",
+    x = NULL, y = "Millions of dollars", color = NULL
+  ) +
+  theme_minimal()
+
+rsa |>
+  autoplot(log_sales) +
+  labs(
+    title = "RSAFSNA: log scale", y = "log(millions of dollars)",
+    x = NULL, y = "Millions of dollars", color = NULL
+  ) +
+  theme_minimal()
+
+## I think log is more useful for transforming the canadian gas data because the graphs are more distinct. The retail data essentially remains the same shape plotted out in either level or log form, just with a concave up vs. concave down slope.
+
+can_gas <- can_gas |>
+  mutate(
+    growth_direct = 100 * difference(Volume) / lag(Volume),
+    growth_logdiff = 100 * difference(log_volume)
+  )
+
+can_gas |>
+  autoplot(growth_direct) +
+  labs(
+    title = "Canadian Gas Production",
+    subtitle = "Direct Growth Rate of Gas Sold",
+    x = "Date", y = "Growth Rate (%)", color = NULL
+  ) +
+  theme_minimal()
+
+can_gas <- can_gas |>
+  mutate(
+    growth_gap = abs(growth_direct - growth_logdiff))
+
+can_gas |>
+  autoplot(growth_gap) +
+  labs(
+    title = "Canadian Gas Production",
+    subtitle = "Gap Between Direct and Log Growth Rates",
+    x = "Date", y = "Gap (%)", color = NULL
+  ) +
+  theme_minimal()
+
+## The largest gap between the log difference and the growth rate is around 3%, which I think means the log overall did a good job estimating the percent changes in gas sales.
+
+retail_ts <- retail_ts |>
+  group_by_key() |>
+  mutate(growth_mom = 100 * difference(log(sales))) |>
+  ungroup()
+
+retail_ts |>
+  autoplot(growth_mom) +
+  labs(
+    title = "Month-over-Month Growth: SA vs. NSA Retail Sales",
+    x = NULL, y = "Growth rate (%)", color = NULL
+  ) +
+  theme_minimal()
+
+## The non-seasonally adjusted data for growth rates is far noisier. Every December, there is a large spike in the growth rate, followed by a large drop in January. The seasonally adjusted data is much smoother and more consistent.
