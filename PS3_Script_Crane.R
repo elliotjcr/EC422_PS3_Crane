@@ -177,3 +177,51 @@ retail_ts |>
   theme_minimal()
 
 ## The non-seasonally adjusted data for growth rates is far noisier. Every December, there is a large spike in the growth rate, followed by a large drop in January. The seasonally adjusted data is much smoother and more consistent.
+
+retail_ts |>
+  filter(series_id == "RSAFSNA") |>
+  gg_season(sales) +
+  labs(
+    title = "Seasonal Pattern in NSA Retail Sales",
+    y = "Millions of dollars"
+  ) +
+  theme_minimal()
+
+retail_ts |>
+  filter(series_id == "RSAFS") |>
+  gg_season(sales) +
+  labs(
+    title = "SA Retail Sales",
+    y = "Millions of dollars"
+  ) +
+  theme_minimal()
+
+## The seasonally adjusted data shows up in the plot as much smoother lines, showing overall trends throughout the year rather than bouncing around month to month. The seasonally adjusted plot also makes the covid dip much more apparent due to how much it stands out compared to otherwise minor trends.
+
+can_gas |>
+  gg_season(log_volume) +
+  labs(
+    title = "Seasonal Pattern in Canadian Gas Production",
+    y = "Millions of Liters"
+  ) +
+  theme_minimal()
+
+## The summer months tend to have the lowest gas production/sales, which is honestly not what I would expect. I would think people would be going on more road trips in the summer and demand for gas would be higher.
+## Maybe it has to do with skiing/snow plows/winter sports...
+## OH!! it's NATURAL gas, which can be used to heat homes/water supplies. This makes more sense now.
+
+can_gas |>
+  gg_subseries(log_volume) +
+  labs(
+    title = "Subseries Plot: Canadian Gas Production",
+    y = "log(Volume)"
+  )
+
+retail_nsa_x13 <- retail_ts |>
+  filter(series_id == "RSAFSNA") |>
+  model(x13 = X_13ARIMA_SEATS(sales)) |>
+  components()
+
+retail_nsa_x13 |> autoplot()
+
+## It is difficult, based on the scale of this plot, to see what is happening on a month by month basis. The seasonal swings seem to be slightly petering out as we get closer to the present(especially the upswings).
