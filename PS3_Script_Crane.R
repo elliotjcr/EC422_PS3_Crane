@@ -224,4 +224,59 @@ retail_nsa_x13 <- retail_ts |>
 
 retail_nsa_x13 |> autoplot()
 
-## It is difficult, based on the scale of this plot, to see what is happening on a month by month basis. The seasonal swings seem to be slightly petering out as we get closer to the present(especially the upswings).
+## It is difficult, based on the scale of this plot, to see what is happening on a month by month basis. The seasonal swings seem to be slightly petering out as we get closer to the present(especially the upswings). Extrapolating from 2.7, assuming the swings are at the same place in the year, the upswings would be in December and the downswings in January.
+
+sa_compare <- retail_nsa_x13 |>
+  as_tibble() |>
+  select(Month, mine = season_adjust) |>
+  left_join(
+    retail_ts |>
+      filter(series_id == "RSAFS") |>
+      as_tibble() |>
+      transmute(Month, census = sales),
+    by = "Month"
+  ) |>
+  mutate(pct_diff = 100 * (log(mine) - log(census)))
+
+sa_compare |>
+  ggplot(aes(x = Month, y = pct_diff)) +
+  geom_line() +
+  labs(
+    title = "My X-13 Seasonal Adjustment Minus the Census Bureau's",
+    x = NULL, y = "Difference (%)"
+  ) +
+  theme_minimal()
+
+## The difference between my seasonal adjustment and the Census Bureau's is very small, with the largest difference being just shy of 2% in 2022/2023. 
+
+can_gas_fit <- can_gas |>
+  model(TSLM(log_volume ~ trend() + season()))
+
+report(can_gas_fit)
+
+can_gas_fit |>
+  tidy() |>
+  select(term, estimate, std.error, statistic, p.value) |>
+  knitr::kable(digits = 3)
+
+## The estimated average monthly growth rate in the log is 0.004, which is a 0.4% increase in gas production per month. The month with the highest seasonal effect is June, with a t-statistic of -4.777
+
+can_gas_fit |>
+  augment() |>
+  ggplot(aes(x = Month)) +
+  geom_line(aes(y = log_volume, color = "Actual")) +
+  geom_line(aes(y = .fitted, color = "Fitted")) +
+  labs(title = "Linear Trend + Seasonal Dummies Fit: Canadian Gas Production",
+       y = "log(Volume)", color = NULL) +
+  theme_minimal()
+
+## The LTSD model misses the actual observations pretty severely in the early 1960s. Aside from that, it syncs up pretty well with the data, especially in the late 60s and from the early 80s up to the early 2000s.
+
+can_gas_fit |> gg_tsresiduals()
+
+can_gas_fit |>
+  augment() |>
+  features(.innov, ljung_box, lag = 24)
+
+## The ACF of the residuals shows high autocorrelation (almost all the way up at 1) for lags in the first year or so (12 months), and still significant autocorrelation for the following 12 months as well.
+## The p-value of the Ljung-Box test is 0.000, which means we reject the null hypothesis that the residuals are white noise. This indicates that there is still some autocorrelation in the residuals, and the model may not be capturing all of the patterns in the data.
