@@ -224,7 +224,7 @@ retail_nsa_x13 <- retail_ts |>
 
 retail_nsa_x13 |> autoplot()
 
-## It is difficult, based on the scale of this plot, to see what is happening on a month by month basis. The seasonal swings seem to be slightly petering out as we get closer to the present(especially the upswings). Extrapolating from 2.7, assuming the swings are at the same place in the year, the upswings would be in December and the downswings in January.
+## It is difficult, based on the scale of this plot, to see what is happening on a month by month basis. The seasonal swings seem to be slightly petering out as we get closer to the present(especially the upswings). Extrapolating from previous plots, assuming the swings are at the same place in the year, the upswings would be in December and the downswings in January.
 
 sa_compare <- retail_nsa_x13 |>
   as_tibble() |>
